@@ -44,30 +44,11 @@ pipeline {
             }
         }
 
-        stage("Docker build") {
-            steps {
-                sh "docker build -t localhost:5000/calculator ."
-            }
-        }
-
-
-        stage("Docker push") {
-            steps {
-                sh "docker push localhost:5000/calculator"
-            }
-        }
-
-
-        stage("Deploy to staging") {
-            steps {
-                sh "docker run -d --rm -p 8765:8080 --name calculator localhost:5000/calculator"
-            }
-        }
-
         stage("Acceptance test") {
             steps {
-                sleep 60
-                sh "./acceptance_test.sh"
+                sh "docker-compose -f docker-compose.yml -f acceptance/docker-compose-acceptance.yml build test"
+                sh "docker-compose -f docker-compose.yml -f acceptance/docker-compose-acceptance.yml -p acceptance up -d"
+                sh 'test $(docker wait acceptance_test_1) -eq 0'
             }
         }
     }
